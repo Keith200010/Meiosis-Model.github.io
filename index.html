@@ -1,0 +1,2366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>减数分裂数学和物理模型 - 高中生物学</title>
+  <!-- 引入Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 引入Font Awesome -->
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- 引入Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+  <!-- 配置Tailwind自定义主题 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4338ca', // 深蓝紫色 - 主色调
+            secondary: '#06b6d4', // 青色 - 辅助色
+            accent: '#f472b6', // 粉色 - 强调色
+            neutral: '#1f2937', // 深灰色 - 中性色
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  <!-- 自定义工具类 -->
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .glass-effect {
+        @apply bg-white/70 backdrop-blur-md shadow-lg;
+      }
+      .cell-animation {
+        @apply transition-all duration-700 ease-in-out;
+      }
+      .button-hover {
+        @apply hover:scale-105 transition-all duration-300 hover:shadow-md;
+      }
+      .mobile-touch-target {
+        @apply min-h-[44px] min-w-[44px] touch-manipulation;
+      }
+    }
+  </style>
+  
+  <!-- 移动端特定样式 -->
+  <style>
+    @media (max-width: 767px) {
+      /* 确保在移动设备上内容不会被裁剪 */
+      body {
+        overflow-x: hidden;
+      }
+      
+      /* 优化表格在移动端的显示 */
+      .stage-data-table {
+        font-size: 12px;
+      }
+      
+      .stage-data-table th,
+      .stage-data-table td {
+        padding: 6px 4px;
+        word-break: keep-all;
+      }
+      
+      /* 优化按钮触摸区域 */
+      button,
+      select {
+        min-height: 44px;
+        min-width: 44px;
+      }
+      
+      /* 优化图表容器 */
+      .chart-container {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+      
+      /* 优化缩略图在移动端的布局 */
+      .stage-thumbnails {
+        grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)) !important;
+      }
+      
+      /* 优化主容器布局 */
+      .main-container {
+        flex-direction: column;
+      }
+      
+      /* 优化单元格大小 */
+      .cell-stage {
+        margin: 0 auto;
+      }
+    }
+    
+    /* 防止iOS设备上的点击延迟 */
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 text-gray-800 font-sans">
+  <!-- 顶部导航栏 -->
+  <header class="sticky top-0 z-50 glass-effect">
+    <div class="container mx-auto px-4 py-4">
+      <div class="flex flex-col md:flex-row justify-between items-center">
+        <h1 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-primary mb-4 md:mb-0">
+          <i class="fa fa-flask mr-2"></i>减数分裂数学和物理模型
+        </h1>
+        <div class="flex flex-col sm:flex-row items-center gap-4">
+          <div class="flex items-center space-x-2">
+            <label for="chromosome-count" class="text-gray-700 font-medium">染色体数量:</label>
+            <select id="chromosome-count" class="bg-white border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50">
+              <option value="4">4条</option>
+              <option value="6">6条</option>
+              <option value="8">8条</option>
+            </select>
+          </div>
+          <div class="flex items-center space-x-1">
+            <button id="prev-stage" class="bg-primary text-white rounded-l-md px-4 py-2 button-hover">
+              <i class="fa fa-chevron-left"></i>
+            </button>
+            <button id="next-stage" class="bg-primary text-white rounded-r-md px-4 py-2 button-hover">
+              <i class="fa fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-4 py-8">
+    <!-- 阶段导航 -->
+    <div class="mb-8 overflow-x-auto">
+      <div class="flex space-x-2 md:space-x-4 min-w-max pb-2">
+        <button class="stage-btn bg-primary text-white px-4 py-2 rounded-full text-sm md:text-base cell-animation" data-stage="0">分裂间期</button>
+        <button class="stage-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm md:text-base cell-animation" data-stage="1">减Ⅰ前期</button>
+        <button class="stage-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm md:text-base cell-animation" data-stage="2">减Ⅰ中期</button>
+        <button class="stage-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm md:text-base cell-animation" data-stage="3">减Ⅰ后期</button>
+        <button class="stage-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm md:text-base cell-animation" data-stage="4">减Ⅰ末期</button>
+        <button class="stage-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm md:text-base cell-animation" data-stage="5">减Ⅱ前期</button>
+        <button class="stage-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm md:text-base cell-animation" data-stage="6">减Ⅱ中期</button>
+        <button class="stage-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm md:text-base cell-animation" data-stage="7">减Ⅱ后期</button>
+        <button class="stage-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm md:text-base cell-animation" data-stage="8">减Ⅱ末期</button>
+      </div>
+    </div>
+
+    <!-- 当前阶段信息卡片 -->
+    <div class="glass-effect rounded-xl p-6 mb-8">
+      <h2 id="stage-title" class="text-2xl font-bold text-primary mb-3">分裂间期</h2>
+      <p id="stage-description" class="text-gray-700 leading-relaxed">
+        分裂间期是减数分裂前的准备阶段，此时细胞进行DNA复制和蛋白质合成。染色体复制后形成由两条姐妹染色单体组成的结构，但在显微镜下仍呈染色质状态。
+      </p>
+    </div>
+
+    <!-- 主要内容区域 -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- 左侧：细胞分裂动画 -->
+      <div class="lg:col-span-1">
+        <div class="glass-effect rounded-xl p-6 h-full">
+          <h3 class="text-xl font-bold mb-4 text-neutral">细胞分裂可视化</h3>
+          <div id="cell-visualization" class="w-full h-[400px] bg-white/50 rounded-lg flex items-center justify-center border border-gray-200 overflow-hidden">
+            <!-- 细胞分裂动画将在这里呈现 -->
+            <div id="cell-stage" class="relative w-[300px] h-[300px] border-2 border-gray-400 rounded-full bg-blue-50">
+              <!-- 染色体将通过JavaScript动态生成 -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右侧：图表和数据 -->
+      <div class="lg:col-span-2">
+        <div class="glass-effect rounded-xl p-6 mb-8">
+          <h3 class="text-xl font-bold mb-4 text-neutral">数量变化图表</h3>
+          <div class="w-full h-[300px]">
+            <canvas id="meiosis-chart"></canvas>
+          </div>
+          
+          <!-- 各时期小型物理模型 -->
+        <div class="mt-6" id="thumbnails-container">
+          <div class="flex justify-between items-center mb-3">
+            <h4 class="text-lg font-semibold text-neutral">各时期物理模型</h4>
+            <button id="toggle-thumbnails" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded-md transition-all duration-300 button-hover flex items-center space-x-1">
+              <i class="fa fa-eye" id="toggle-icon"></i>
+              <span>显示</span>
+            </button>
+          </div>
+          <div id="stage-thumbnails" class="flex justify-center space-x-4 py-4 overflow-x-auto transition-all duration-300">
+            <!-- 各时期物理模型将通过JavaScript动态生成 -->
+          </div>
+        </div>
+
+        <!-- 各阶段数量表格 -->
+        <div class="mt-8 overflow-x-auto">
+          <h4 class="text-lg font-semibold mb-3 text-neutral">各时期数量变化表</h4>
+          <table id="stage-data-table" class="min-w-full bg-white rounded-lg overflow-hidden border border-gray-200">
+            <!-- 表格内容将通过JavaScript动态生成 -->
+          </table>
+        </div>
+        </div>
+
+        <!-- 数据表格 -->
+        <div class="glass-effect rounded-xl p-6">
+          <h3 class="text-xl font-bold mb-4 text-neutral">当前阶段数据</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+              <div class="text-sm text-gray-500 mb-1">染色体数量</div>
+              <div id="chromosome-count-value" class="text-3xl font-bold text-primary">4</div>
+            </div>
+            <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+              <div class="text-sm text-gray-500 mb-1">DNA分子数</div>
+              <div id="dna-count-value" class="text-3xl font-bold text-secondary">8</div>
+            </div>
+            <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+              <div class="text-sm text-gray-500 mb-1">姐妹染色单体数</div>
+              <div id="chromatid-count-value" class="text-3xl font-bold text-accent">8</div>
+            </div>
+            <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+              <div class="text-sm text-gray-500 mb-1">同源染色体对数</div>
+              <div id="homologous-pair-count-value" class="text-3xl font-bold text-emerald-500">2</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 减数分裂过程说明 -->
+    <div class="glass-effect rounded-xl p-6 mt-8">
+      <h3 class="text-xl font-bold mb-4 text-neutral">减数分裂过程概述</h3>
+      <div class="prose max-w-none">
+        <p>减数分裂是进行有性生殖的生物形成生殖细胞过程中所特有的细胞分裂方式。在减数分裂过程中，染色体只复制一次，而细胞连续分裂两次，新产生的生殖细胞中的染色体数目比体细胞减少一半。</p>
+        <p class="mt-4">本模型以4-8条染色体为例，展示了减数分裂全过程中染色体、DNA和姐妹染色单体的数量变化规律。通过交互式界面，您可以直观地了解减数分裂各阶段的特点及其遗传物质的变化情况。</p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-neutral text-white py-8 mt-12">
+    <div class="container mx-auto px-4">
+      <div class="flex flex-col md:flex-row justify-between items-center">
+        <div class="mb-4 md:mb-0">
+          <h3 class="text-xl font-bold">减数分裂数学和物理模型</h3>
+          <p class="text-gray-400">高中生物学教学辅助工具</p>
+        </div>
+        <div class="flex space-x-4">
+          <button id="reset-model" class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-md transition-all duration-300">
+            <i class="fa fa-refresh mr-1"></i>重置模型
+          </button>
+          <button id="about-btn" class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-md transition-all duration-300">
+            <i class="fa fa-info-circle mr-1"></i>关于
+          </button>
+        </div>
+      </div>
+      <div class="border-t border-white/20 mt-6 pt-6 text-center text-gray-400">
+        <p>© 2025 减数分裂教学模型 - 保留所有权利</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- 模态框 -->
+  <div id="modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 id="modal-title" class="text-xl font-bold">关于模型</h3>
+        <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+          <i class="fa fa-times text-xl"></i>
+        </button>
+      </div>
+      <div id="modal-content">
+        <!-- 模态框内容将通过JavaScript动态填充 -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 减数分裂各阶段数据
+    const meiosisData = [
+      // 分裂间期
+      {
+        stage: 0,
+        title: "分裂间期",
+        description: "分裂间期是减数分裂前的准备阶段，此时细胞进行DNA复制和蛋白质合成。染色体复制后形成由两条姐妹染色单体组成的结构，但在显微镜下仍呈染色质状态。",
+        chromosomeCount: 4, // 以4条染色体为例，可动态变化
+        dnaCount: 8, // DNA复制后加倍
+        chromatidCount: 8, // 每条染色体包含两条姐妹染色单体
+        homologousPairCount: 2 // 同源染色体对数
+      },
+      // 减Ⅰ前期
+      {
+        stage: 1,
+        title: "减Ⅰ前期",
+        description: "减Ⅰ前期是减数分裂过程中最长、最复杂的阶段。在此阶段，同源染色体发生联会，形成四分体，同时可能发生交叉互换现象。",
+        chromosomeCount: 4,
+        dnaCount: 8,
+        chromatidCount: 8,
+        homologousPairCount: 2
+      },
+      // 减Ⅰ中期
+      {
+        stage: 2,
+        title: "减Ⅰ中期",
+        description: "减Ⅰ中期时，同源染色体成对排列在赤道板上，纺锤丝与着丝点相连，为后续同源染色体的分离做准备。",
+        chromosomeCount: 4,
+        dnaCount: 8,
+        chromatidCount: 8,
+        homologousPairCount: 2
+      },
+      // 减Ⅰ后期
+      {
+        stage: 3,
+        title: "减Ⅰ后期",
+        description: "减Ⅰ后期时，同源染色体在纺锤丝的牵引下分离，分别向细胞两极移动。此时每条染色体仍包含两条姐妹染色单体。",
+        chromosomeCount: 4,
+        dnaCount: 8,
+        chromatidCount: 8,
+        homologousPairCount: 2
+      },
+      // 减Ⅰ末期
+      {
+        stage: 4,
+        title: "减Ⅰ末期",
+        description: "减Ⅰ末期时，细胞分裂为两个子细胞，每个子细胞中的染色体数目减半。此时染色体呈染色质状态，核膜可能重新形成。",
+        chromosomeCount: 2,
+        dnaCount: 4,
+        chromatidCount: 4,
+        homologousPairCount: 0 // 减Ⅰ末期后同源染色体分离到不同子细胞
+      },
+      // 减Ⅱ前期
+      {
+        stage: 5,
+        title: "减Ⅱ前期",
+        description: "减Ⅱ前期类似于有丝分裂前期，染色体再次浓缩，核膜消失，纺锤体形成。此时细胞中不再有同源染色体。",
+        chromosomeCount: 2,
+        dnaCount: 4,
+        chromatidCount: 4,
+        homologousPairCount: 0
+      },
+      // 减Ⅱ中期
+      {
+        stage: 6,
+        title: "减Ⅱ中期",
+        description: "减Ⅱ中期时，染色体的着丝点排列在赤道板上，纺锤丝与着丝点相连。",
+        chromosomeCount: 4, // 修改为4，实现与减Ⅱ后期相同的染色体数量，使图表在中期就显示上升
+        dnaCount: 4,
+        chromatidCount: 4,
+        homologousPairCount: 0
+      },
+      // 减Ⅱ后期
+      {
+        stage: 7,
+        title: "减Ⅱ后期",
+        description: "减Ⅱ后期时，着丝点分裂，姐妹染色单体分离，成为两条独立的染色体，并在纺锤丝的牵引下分别向细胞两极移动。",
+        chromosomeCount: 4,
+        dnaCount: 4,
+        chromatidCount: 0,
+        homologousPairCount: 0
+      },
+      // 减Ⅱ末期
+      {
+        stage: 8,
+        title: "减Ⅱ末期",
+        description: "减Ⅱ末期时，细胞再次分裂，形成四个子细胞。每个子细胞中的染色体数目是原始细胞的一半，且不含有同源染色体。",
+        chromosomeCount: 2,
+        dnaCount: 2,
+        chromatidCount: 0,
+        homologousPairCount: 0
+      }
+    ];
+
+    // 当前状态变量
+    let currentStage = 0;
+    let currentChromosomeCount = 4;
+    let meiosisChart = null;
+
+    // DOM 元素
+    const stageBtns = document.querySelectorAll('.stage-btn');
+    const prevStageBtn = document.getElementById('prev-stage');
+    const nextStageBtn = document.getElementById('next-stage');
+    const chromosomeCountSelect = document.getElementById('chromosome-count');
+    const stageTitle = document.getElementById('stage-title');
+    const stageDescription = document.getElementById('stage-description');
+    const chromosomeCountValue = document.getElementById('chromosome-count-value');
+    const dnaCountValue = document.getElementById('dna-count-value');
+    const chromatidCountValue = document.getElementById('chromatid-count-value');
+    const cellStage = document.getElementById('cell-stage');
+    const resetModelBtn = document.getElementById('reset-model');
+    const aboutBtn = document.getElementById('about-btn');
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalContent = document.getElementById('modal-content');
+    const closeModalBtn = document.getElementById('close-modal');
+    const toggleThumbnailsBtn = document.getElementById('toggle-thumbnails');
+    const stageThumbnails = document.getElementById('stage-thumbnails');
+    const toggleIcon = document.getElementById('toggle-icon');
+    const toggleText = toggleThumbnailsBtn.querySelector('span');
+    const thumbnailsContainer = document.getElementById('thumbnails-container');
+
+    // 初始化缩略图开关功能
+    function initThumbnailToggle() {
+      let isThumbnailsVisible = true;
+      
+      toggleThumbnailsBtn.addEventListener('click', function() {
+        isThumbnailsVisible = !isThumbnailsVisible;
+        
+        if (isThumbnailsVisible) {
+          // 显示缩略图
+          stageThumbnails.style.display = 'flex';
+          stageThumbnails.style.maxHeight = '500px';
+          toggleIcon.className = 'fa fa-eye';
+          toggleText.textContent = '显示';
+        } else {
+          // 隐藏缩略图并折叠区域
+          stageThumbnails.style.display = 'none';
+          stageThumbnails.style.maxHeight = '0';
+          toggleIcon.className = 'fa fa-eye-slash';
+          toggleText.textContent = '隐藏';
+        }
+      });
+    }
+    
+    // 屏幕尺寸变化时重新调整布局
+    let resizeTimeout;
+    function handleResize() {
+      // 使用防抖函数减少重绘次数，提高性能
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        if (meiosisChart) {
+          meiosisChart.destroy();
+          initChart();
+        }
+        generateChromosomeVisualization();
+      }, 100); // 100ms的延迟可以过滤掉快速的尺寸变化
+    }
+    
+    // 添加窗口大小变化监听器
+    window.addEventListener('resize', handleResize);
+
+    // 初始化图表
+    function initChart() {
+      const ctx = document.getElementById('meiosis-chart').getContext('2d');
+      
+      // 根据屏幕宽度调整图表设置
+      const isMobile = window.innerWidth < 768;
+      const chartHeight = isMobile ? '250px' : '300px';
+      ctx.canvas.parentNode.style.height = chartHeight;
+      
+      // 为当前染色体数量生成数据
+      const labels = meiosisData.map(stage => stage.title);
+      
+      // 生成染色体数量数据
+      // 特殊处理减Ⅱ中期，确保染色体数量在此时就开始上升
+      const chromosomeData = meiosisData.map((stage, index) => {
+        const baseCount = stage.chromosomeCount;
+        return Math.round(baseCount * (currentChromosomeCount / 4));
+      });
+      
+      // 对于标签，使用原始标签数组
+      const adjustedLabels = labels;
+      
+      // DNA分子数据
+      const dnaData = meiosisData.map(stage => {
+        const baseCount = stage.dnaCount;
+        return Math.round(baseCount * (currentChromosomeCount / 4));
+      });
+      
+      const chromatidData = meiosisData.map(stage => {
+        const baseCount = stage.chromatidCount;
+        return Math.round(baseCount * (currentChromosomeCount / 4));
+      });
+      
+      const homologousPairData = meiosisData.map(stage => {
+        const baseCount = stage.homologousPairCount;
+        return Math.round(baseCount * (currentChromosomeCount / 4));
+      });
+
+      meiosisChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: adjustedLabels,
+          datasets: [
+            {
+              label: '染色体数量',
+              data: chromosomeData,
+              borderColor: '#4338ca',
+              backgroundColor: 'rgba(67, 56, 202, 0.1)',
+              tension: 0, // 直线
+              fill: false,
+              borderWidth: 3,
+              pointBackgroundColor: '#4338ca',
+              pointRadius: 5,
+              pointHoverRadius: 7,
+              stepped: 'before', // 实现断崖式变化效果，适用于减一末期减少和减Ⅱ中期上升
+              hidden: true // 默认不显示
+            },
+            {
+              label: 'DNA分子数',
+              data: dnaData,
+              borderColor: '#06b6d4',
+              backgroundColor: 'rgba(6, 182, 212, 0.1)',
+              tension: 0, // 直线
+              fill: false,
+              borderWidth: 3,
+              pointBackgroundColor: '#06b6d4',
+              pointRadius: 5,
+              pointHoverRadius: 7,
+              stepped: 'before', // 实现DNA曲线在减Ⅰ末期和减Ⅱ末期的断崖式下降
+              hidden: true // 默认不显示
+            },
+            {
+              label: '姐妹染色单体数',
+              data: chromatidData,
+              borderColor: '#f472b6',
+              backgroundColor: 'rgba(244, 114, 182, 0.1)',
+              tension: 0, // 直线
+              fill: false,
+              borderWidth: 3,
+              pointBackgroundColor: '#f472b6',
+              pointRadius: 5,
+              pointHoverRadius: 7,
+              stepped: 'before', // 实现姐妹染色单体曲线在减Ⅰ末期断崖式减少，在减Ⅱ后期断崖式降为零
+              hidden: true // 默认不显示
+            },
+            {
+              label: '同源染色体对数',
+              data: homologousPairData,
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              tension: 0, // 直线
+              fill: false,
+              borderWidth: 3,
+              pointBackgroundColor: '#10b981',
+              pointRadius: 5,
+              pointHoverRadius: 7,
+              stepped: 'before', // 实现同源染色体曲线在减Ⅰ末期断崖式减为0
+              hidden: true // 默认不显示
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: window.innerWidth < 768 ? 'bottom' : 'top',
+              labels: {
+                font: {
+                  size: window.innerWidth < 768 ? 12 : 14
+                },
+                padding: window.innerWidth < 768 ? 10 : 20
+              }
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+              titleColor: '#1f2937',
+              bodyColor: '#1f2937',
+              borderColor: '#e5e7eb',
+              borderWidth: 1,
+              padding: 12,
+              boxPadding: 6,
+              usePointStyle: true,
+              callbacks: {
+                label: function(context) {
+                  let label = context.dataset.label || '';
+                  if (label) {
+                    label += ': ';
+                  }
+                  if (context.parsed.y !== null) {
+                    label += context.parsed.y;
+                  }
+                  return label;
+                }
+              }
+            },
+            annotation: {
+              annotations: {
+                line1: {
+                  type: 'line',
+                  xMin: currentStage,
+                  xMax: currentStage,
+                  borderColor: 'rgba(0, 0, 0, 0.3)',
+                  borderWidth: 2,
+                  borderDash: [5, 5],
+                  label: {
+                    content: '当前阶段',
+                    enabled: false
+                  }
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: {
+                display: false
+              },
+              ticks: {
+                maxRotation: window.innerWidth < 768 ? 90 : 45,
+                minRotation: window.innerWidth < 768 ? 90 : 45,
+                font: {
+                  size: window.innerWidth < 768 ? 10 : 11
+                }
+              }
+            },
+            y: {
+              beginAtZero: true,
+              grid: {
+                color: 'rgba(0, 0, 0, 0.05)'
+              },
+              ticks: {
+                stepSize: 2,
+                font: {
+                  size: window.innerWidth < 768 ? 10 : 12
+                }
+              }
+            }
+          },
+          interaction: {
+            mode: 'nearest',
+            axis: 'x',
+            intersect: false
+          }
+        }
+      });
+    }
+
+    // 更新图表中的当前阶段线
+    function updateChartStageLine() {
+      if (meiosisChart && meiosisChart.options.plugins.annotation) {
+        meiosisChart.options.plugins.annotation.annotations.line1.xMin = currentStage;
+        meiosisChart.options.plugins.annotation.annotations.line1.xMax = currentStage;
+        meiosisChart.update();
+      }
+      
+      // 更新阶段数据表格，高亮当前阶段
+      generateStageDataTable();
+      
+      // 更新各时期小型物理模型
+      generateStageThumbnails();
+    }
+
+    // 生成各时期小型物理模型（5x5大小）
+    function generateStageThumbnails() {
+      const container = document.getElementById('stage-thumbnails');
+      container.innerHTML = '';
+      
+      // 为每个时期创建一个小型物理模型
+      meiosisData.forEach((stage, index) => {
+        const thumbnailContainer = document.createElement('div');
+        thumbnailContainer.className = 'flex flex-col items-center';
+        
+        // 缩略图外框，当前阶段高亮显示
+        const stageClass = index === currentStage ? 'ring-2 ring-blue-500 bg-blue-50' : 'bg-white';
+        
+        const cellDiv = document.createElement('div');
+        cellDiv.className = `relative w-[120px] h-[120px] border border-gray-300 rounded-full bg-blue-50 ${stageClass} flex items-center justify-center transition-all duration-200`;
+        
+        // 创建SVG容器
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('width', '100');
+        svg.setAttribute('height', '100');
+        svg.setAttribute('viewBox', '0 0 100 100');
+        cellDiv.appendChild(svg);
+        
+        // 根据阶段生成不同的染色体样式
+        renderStageThumbnail(svg, index, currentChromosomeCount);
+        
+        // 添加阶段标签
+        const labelDiv = document.createElement('div');
+        labelDiv.className = 'mt-2 text-xs text-gray-600 text-center';
+        labelDiv.textContent = stage.title;
+        
+        thumbnailContainer.appendChild(cellDiv);
+        thumbnailContainer.appendChild(labelDiv);
+        container.appendChild(thumbnailContainer);
+      });
+    }
+    
+    // 为特定阶段渲染缩略图内容
+    function renderStageThumbnail(svg, stageIndex, chromosomeCount) {
+      const baseCount = meiosisData[stageIndex].chromosomeCount;
+      const actualCount = Math.round(baseCount * (chromosomeCount / 4));
+      const chromatidCount = Math.round(meiosisData[stageIndex].chromatidCount * (chromosomeCount / 4));
+      const colors = ['#3b82f6', '#ef4444', '#3b82f6', '#ef4444', '#3b82f6', '#ef4444', '#3b82f6', '#ef4444'];
+      // 根据染色体数量动态调整染色体大小，数量越多尺寸越小
+      // 基础大小为8，最小为3，确保即使染色体数量很多也能被看清
+      const chromosomeSize = Math.max(3, 8 / Math.sqrt(chromosomeCount / 4));
+      
+      if (stageIndex === 0) {
+        // 分裂间期 - 显示染色质
+        const chromatinCount = Math.round(chromatidCount * 0.8); // 使用染色单体数更准确
+        
+        for (let i = 0; i < chromatinCount; i++) {
+          const x1 = 20 + Math.random() * 60;
+          const y1 = 20 + Math.random() * 60;
+          const x2 = x1 + (Math.random() - 0.5) * 20;
+          const y2 = y1 + (Math.random() - 0.5) * 20;
+          
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', x1);
+          line.setAttribute('y1', y1);
+          line.setAttribute('x2', x2);
+          line.setAttribute('y2', y2);
+          line.setAttribute('stroke', colors[i % colors.length]);
+          line.setAttribute('stroke-width', '1.5');
+          line.setAttribute('stroke-linecap', 'round');
+          line.setAttribute('opacity', '0.7');
+          svg.appendChild(line);
+        }
+      } else if (stageIndex <= 4) {
+        // 减Ⅰ阶段 - 显示染色体对
+        const pairs = Math.max(1, Math.floor(actualCount / 2));
+        
+        // 减Ⅰ前期 - 显示四分体（散乱分布）
+        if (stageIndex === 1) {
+          // 减Ⅰ前期：四分体散乱分布，有随机位置和旋转角度
+          for (let i = 0; i < pairs; i++) {
+            // 随机位置，确保在可见区域内
+            const x = 30 + Math.random() * 40;
+            const y = 30 + Math.random() * 40;
+            // 随机旋转角度
+            const rotation = Math.random() * 360;
+            
+            // 左侧染色体（同源染色体中的一条）
+            drawXShape(svg, x - 5, y, colors[i * 2], chromosomeSize * 0.8, rotation);
+            // 右侧染色体（同源染色体中的另一条）
+            drawXShape(svg, x + 5, y, colors[i * 2 + 1], chromosomeSize * 0.8, rotation);
+          }
+        } else if (stageIndex === 2) {
+          // 减Ⅰ中期：四分体整齐排列在赤道板上
+          const spacing = 30;
+          const startX = (100 - pairs * spacing) / 2;
+          const equatorY = 50;
+          
+          for (let i = 0; i < pairs; i++) {
+            const x = startX + i * spacing;
+            
+            // 左侧染色体
+            drawXShape(svg, x - 5, equatorY, colors[i * 2], chromosomeSize * 0.8);
+            // 右侧染色体
+            drawXShape(svg, x + 5, equatorY, colors[i * 2 + 1], chromosomeSize * 0.8);
+          }
+        } else if (stageIndex === 3) {
+          // 减Ⅰ后期 - 同源染色体开始分离
+          const spacing = 35;
+          const startX = (100 - pairs * spacing) / 2;
+          
+          for (let i = 0; i < pairs; i++) {
+            const x = startX + i * spacing;
+            const baseY = 50;
+            
+            // 蓝色染色体向上移动
+            drawXShape(svg, x - 8, baseY - 10, colors[i * 2], chromosomeSize * 0.8);
+            // 红色染色体向下移动
+            drawXShape(svg, x + 8, baseY + 10, colors[i * 2 + 1], chromosomeSize * 0.8);
+            
+            // 添加纺锤丝的简化表示，适应染色体的新位置
+            
+            // 蓝色染色体的纺锤丝（向上）
+            const fiber1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            fiber1.setAttribute('x1', x - 8);
+            fiber1.setAttribute('y1', baseY - 10);
+            fiber1.setAttribute('x2', 15);
+            fiber1.setAttribute('y2', 40);  // 适应蓝色染色体的位置
+            fiber1.setAttribute('stroke', 'rgba(0,0,0,0.2)');
+            fiber1.setAttribute('stroke-width', '1');
+            fiber1.setAttribute('stroke-dasharray', '2,2');
+            svg.appendChild(fiber1);
+            
+            // 红色染色体的纺锤丝（向下）
+            const fiber2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            fiber2.setAttribute('x1', x + 8);
+            fiber2.setAttribute('y1', baseY + 10);
+            fiber2.setAttribute('x2', 85);
+            fiber2.setAttribute('y2', 60);  // 适应红色染色体的位置
+            fiber2.setAttribute('stroke', 'rgba(0,0,0,0.2)');
+            fiber2.setAttribute('stroke-width', '1');
+            fiber2.setAttribute('stroke-dasharray', '2,2');
+            svg.appendChild(fiber2);
+          }
+        } else if (stageIndex === 4) {
+          // 减Ⅰ末期 - 显示两个细胞核
+          // 左侧细胞核
+          const nucleus1 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          nucleus1.setAttribute('cx', '35');
+          nucleus1.setAttribute('cy', '50');
+          nucleus1.setAttribute('r', '20');
+          nucleus1.setAttribute('fill', 'none');
+          nucleus1.setAttribute('stroke', '#9ca3af');
+          nucleus1.setAttribute('stroke-width', '1');
+          svg.appendChild(nucleus1);
+          
+          // 右侧细胞核
+          const nucleus2 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          nucleus2.setAttribute('cx', '65');
+          nucleus2.setAttribute('cy', '50');
+          nucleus2.setAttribute('r', '20');
+          nucleus2.setAttribute('fill', 'none');
+          nucleus2.setAttribute('stroke', '#9ca3af');
+          nucleus2.setAttribute('stroke-width', '1');
+          svg.appendChild(nucleus2);
+          
+          // 计算每个细胞核中的染色体数量，确保准确反映减半后的数量
+          const halfCount = Math.max(1, Math.floor(actualCount));
+          
+          // 左侧细胞核中的染色体 - 只显示一种颜色的染色体（来自父方）
+          for (let i = 0; i < halfCount; i++) {
+            const x = 35 + (Math.random() - 0.5) * 15;
+            const y = 50 + (Math.random() - 0.5) * 15;
+            const rotation = Math.random() * 360;
+            drawXShape(svg, x, y, colors[i * 2], chromosomeSize * 0.7, rotation);
+          }
+          
+          // 右侧细胞核中的染色体 - 只显示另一种颜色的染色体（来自母方）
+          for (let i = 0; i < halfCount; i++) {
+            const x = 65 + (Math.random() - 0.5) * 15;
+            const y = 50 + (Math.random() - 0.5) * 15;
+            const rotation = Math.random() * 360;
+            drawXShape(svg, x, y, colors[i * 2 + 1], chromosomeSize * 0.7, rotation);
+          }
+        }
+      } else {
+        // 减Ⅱ阶段
+        
+        if (stageIndex === 5) {
+          // 减Ⅱ前期 - 随机分布的染色体
+          for (let i = 0; i < actualCount; i++) {
+            const x = 25 + Math.random() * 50;
+            const y = 25 + Math.random() * 50;
+            const rotation = Math.random() * 360;
+            drawXShape(svg, x, y, colors[i % colors.length], chromosomeSize, rotation);
+          }
+        } else if (stageIndex === 6) {
+          // 减Ⅱ中期 - 排列在赤道板上
+          const spacing = 25;
+          const startX = (100 - actualCount * spacing) / 2;
+          const equatorY = 50;
+          
+          for (let i = 0; i < actualCount; i++) {
+            const x = startX + i * spacing;
+            drawXShape(svg, x, equatorY, colors[i % colors.length], chromosomeSize, 90); // 垂直排列
+          }
+          
+          // 赤道板线
+          const equatorLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          equatorLine.setAttribute('x1', '20');
+          equatorLine.setAttribute('y1', '50');
+          equatorLine.setAttribute('x2', '80');
+          equatorLine.setAttribute('y2', '50');
+          equatorLine.setAttribute('stroke', 'rgba(0,0,0,0.2)');
+          equatorLine.setAttribute('stroke-width', '1');
+          svg.appendChild(equatorLine);
+        } else if (stageIndex === 7) {
+          // 减Ⅱ后期 - 姐妹染色单体分离
+          // 重要：减Ⅱ后期着丝粒分裂，染色体数目加倍，从减Ⅱ中期的2条变为4条
+          // 根据meiosisData中的定义，重新计算减Ⅱ后期的实际染色体数
+          const anaphase2ChromosomeCount = Math.round(meiosisData[7].chromosomeCount * (chromosomeCount / 4));
+          const spacing = 15; // 间距设置
+          const startX = (100 - anaphase2ChromosomeCount * spacing) / 2;
+          const equatorY = 50;
+          
+          // 绘制正在分离的染色体，显示为L形
+          // 减Ⅱ后期每个染色体都是单个的L形结构（着丝粒分裂后的染色单体）
+          for (let i = 0; i < anaphase2ChromosomeCount; i++) {
+            const x = startX + i * spacing;
+            const color = colors[i % colors.length];
+            
+            // 根据位置决定L形的方向
+            const isTopHalf = i < anaphase2ChromosomeCount / 2;
+            const y = isTopHalf ? equatorY - 10 : equatorY + 10;
+            const rotation = isTopHalf ? -45 : 45;
+            
+            // 绘制L形染色体
+            drawLShape(svg, x, y, color, chromosomeSize * 0.7, rotation);
+            
+            // 添加纺锤丝
+            const fiber = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            fiber.setAttribute('x1', x);
+            fiber.setAttribute('y1', y);
+            fiber.setAttribute('x2', x);
+            fiber.setAttribute('y2', isTopHalf ? 20 : 80);
+            fiber.setAttribute('stroke', 'rgba(0,0,0,0.2)');
+            fiber.setAttribute('stroke-width', '1');
+            fiber.setAttribute('stroke-dasharray', '2,2');
+            svg.appendChild(fiber);
+          }
+        } else if (stageIndex === 8) {
+          // 减Ⅱ末期 - 显示四个子细胞
+          const nuclei = [
+            { cx: 35, cy: 35, r: 15 },
+            { cx: 65, cy: 35, r: 15 },
+            { cx: 35, cy: 65, r: 15 },
+            { cx: 65, cy: 65, r: 15 }
+          ];
+          
+          // 确保每个子细胞中的染色体数量准确
+          // 根据减数分裂规律，减Ⅱ末期每个子细胞中的染色体数量应为初始数量的1/2
+          // 初始染色体4条 → 每个子细胞2条
+          // 初始染色体6条 → 每个子细胞3条
+          // 初始染色体8条 → 每个子细胞4条
+          const chromsPerNucleus = Math.round(chromosomeCount / 2);
+          
+          nuclei.forEach((nucleus, nucIndex) => {
+            // 绘制细胞核
+            const nuc = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            nuc.setAttribute('cx', nucleus.cx);
+            nuc.setAttribute('cy', nucleus.cy);
+            nuc.setAttribute('r', nucleus.r);
+            nuc.setAttribute('fill', 'none');
+            nuc.setAttribute('stroke', '#9ca3af');
+            nuc.setAttribute('stroke-width', '1');
+            svg.appendChild(nuc);
+            
+            // 在细胞核中绘制染色体（L形，表示已经分离的姐妹染色单体）
+            for (let i = 0; i < chromsPerNucleus; i++) {
+              const x = nucleus.cx + (Math.random() - 0.5) * nucleus.r * 0.7;
+              const y = nucleus.cy + (Math.random() - 0.5) * nucleus.r * 0.7;
+              const rotation = Math.random() * 360;
+              const colorIndex = nucIndex * chromsPerNucleus + i;
+              drawLShape(svg, x, y, colors[colorIndex % colors.length], chromosomeSize * 0.5, rotation);
+            }
+          });
+        }
+      }
+    }
+    
+    // 绘制L形状染色体（用于减Ⅱ后期和末期，表示已分离的姐妹染色单体）
+    function drawLShape(svg, centerX, centerY, color, size, rotation = 0) {
+      const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      if (rotation !== 0) {
+        group.setAttribute('transform', `rotate(${rotation} ${centerX} ${centerY})`);
+      }
+      
+      const armLength = size * 1.2;
+      
+      // 长臂
+      const arm1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      arm1.setAttribute('x1', centerX - armLength);
+      arm1.setAttribute('y1', centerY);
+      arm1.setAttribute('x2', centerX);
+      arm1.setAttribute('y2', centerY);
+      arm1.setAttribute('stroke', color);
+      arm1.setAttribute('stroke-width', size * 0.4);
+      arm1.setAttribute('stroke-linecap', 'round');
+      group.appendChild(arm1);
+      
+      // 短臂
+      const arm2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      arm2.setAttribute('x1', centerX);
+      arm2.setAttribute('y1', centerY - armLength);
+      arm2.setAttribute('x2', centerX);
+      arm2.setAttribute('y2', centerY);
+      arm2.setAttribute('stroke', color);
+      arm2.setAttribute('stroke-width', size * 0.4);
+      arm2.setAttribute('stroke-linecap', 'round');
+      group.appendChild(arm2);
+      
+      // 着丝粒位置的黑点
+      const centromere = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      centromere.setAttribute('cx', centerX);
+      centromere.setAttribute('cy', centerY);
+      centromere.setAttribute('r', size * 0.3);
+      centromere.setAttribute('fill', 'black');
+      group.appendChild(centromere);
+      
+      svg.appendChild(group);
+    }
+    
+    // 绘制X形状染色体
+    function drawXShape(svg, centerX, centerY, color, size, rotation = 0) {
+      const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      if (rotation !== 0) {
+        group.setAttribute('transform', `rotate(${rotation} ${centerX} ${centerY})`);
+      }
+      
+      const armLength = size * 1.2;
+      
+      // 左上臂
+      const arm1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      arm1.setAttribute('x1', centerX - armLength);
+      arm1.setAttribute('y1', centerY - armLength);
+      arm1.setAttribute('x2', centerX);
+      arm1.setAttribute('y2', centerY);
+      arm1.setAttribute('stroke', color);
+      arm1.setAttribute('stroke-width', size * 0.4);
+      arm1.setAttribute('stroke-linecap', 'round');
+      group.appendChild(arm1);
+      
+      // 右上臂
+      const arm2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      arm2.setAttribute('x1', centerX + armLength);
+      arm2.setAttribute('y1', centerY - armLength);
+      arm2.setAttribute('x2', centerX);
+      arm2.setAttribute('y2', centerY);
+      arm2.setAttribute('stroke', color);
+      arm2.setAttribute('stroke-width', size * 0.4);
+      arm2.setAttribute('stroke-linecap', 'round');
+      group.appendChild(arm2);
+      
+      // 左下臂
+      const arm3 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      arm3.setAttribute('x1', centerX - armLength);
+      arm3.setAttribute('y1', centerY + armLength);
+      arm3.setAttribute('x2', centerX);
+      arm3.setAttribute('y2', centerY);
+      arm3.setAttribute('stroke', color);
+      arm3.setAttribute('stroke-width', size * 0.4);
+      arm3.setAttribute('stroke-linecap', 'round');
+      group.appendChild(arm3);
+      
+      // 右下臂
+      const arm4 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      arm4.setAttribute('x1', centerX + armLength);
+      arm4.setAttribute('y1', centerY + armLength);
+      arm4.setAttribute('x2', centerX);
+      arm4.setAttribute('y2', centerY);
+      arm4.setAttribute('stroke', color);
+      arm4.setAttribute('stroke-width', size * 0.4);
+      arm4.setAttribute('stroke-linecap', 'round');
+      group.appendChild(arm4);
+      
+      // 着丝粒
+      const centromere = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      centromere.setAttribute('cx', centerX);
+      centromere.setAttribute('cy', centerY);
+      centromere.setAttribute('r', size * 0.3);
+      centromere.setAttribute('fill', 'black');
+      group.appendChild(centromere);
+      
+      svg.appendChild(group);
+    }
+    
+    // 生成各时期数量表格
+    function generateStageDataTable() {
+      const table = document.getElementById('stage-data-table');
+      
+      // 清空表格
+      table.innerHTML = '';
+      
+      // 创建表头（横向标题显示各个时期）
+      const thead = document.createElement('thead');
+      thead.className = 'bg-gray-50';
+      
+      // 表头行创建
+      let headerRow = '<tr>';
+      // 第一列为空或标题
+      headerRow += '<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b" rowspan="2">数量类型</th>';
+      
+      // 遍历所有阶段作为横向标题
+      meiosisData.forEach((stage, index) => {
+        // 当前阶段高亮显示
+        const cellClass = index === currentStage ? 'bg-blue-100 font-medium' : '';
+        headerRow += `<th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b ${cellClass}">${stage.title}</th>`;
+      });
+      headerRow += '</tr>';
+      
+      thead.innerHTML = headerRow;
+      table.appendChild(thead);
+      
+      // 创建表体
+      const tbody = document.createElement('tbody');
+      
+      // 定义要显示的数据类型及其对应的颜色和属性
+      const dataTypes = [
+        {
+          name: '染色体数量',
+          property: 'chromosomeCount',
+          color: 'text-primary',
+          header: '染色体数量'
+        },
+        {
+          name: 'DNA分子数',
+          property: 'dnaCount',
+          color: 'text-secondary',
+          header: 'DNA分子数'
+        },
+        {
+          name: '姐妹染色单体数',
+          property: 'chromatidCount',
+          color: 'text-accent',
+          header: '姐妹染色单体数'
+        },
+        {
+          name: '同源染色体对数',
+          property: 'homologousPairCount',
+          color: 'text-emerald-500',
+          header: '同源染色体对数'
+        }
+      ];
+      
+      // 为每种数据类型创建一行
+      dataTypes.forEach(dataType => {
+        const row = document.createElement('tr');
+        row.className = 'hover:bg-gray-50';
+        
+        // 创建第一列（纵向标题）
+        let rowHTML = `<td class="px-4 py-3 whitespace-nowrap text-sm font-medium ${dataType.color} border-b">${dataType.header}</td>`;
+        
+        // 为每个时期创建数据单元格
+        meiosisData.forEach((stage, index) => {
+          // 计算实际数量
+          const actualCount = Math.round(stage[dataType.property] * (currentChromosomeCount / 4));
+          // 当前阶段高亮显示
+          const cellClass = index === currentStage ? 'bg-blue-50 font-medium' : '';
+          rowHTML += `<td class="px-4 py-3 whitespace-nowrap text-sm text-center font-medium ${dataType.color} border-b ${cellClass}">${actualCount}</td>`;
+        });
+        
+        row.innerHTML = rowHTML;
+        tbody.appendChild(row);
+      });
+      
+      table.appendChild(tbody);
+    }
+
+    // 生成染色体可视化
+    function generateChromosomeVisualization() {
+      // 清空现有内容
+      cellStage.innerHTML = '';
+      
+      // 根据屏幕宽度调整细胞容器大小
+      const isMobile = window.innerWidth < 768;
+      const cellWidth = isMobile ? 240 : 300;
+      const cellHeight = isMobile ? 240 : 300;
+      cellStage.style.width = `${cellWidth}px`;
+      cellStage.style.height = `${cellHeight}px`;
+      
+      // 特殊处理减Ⅰ后期的细胞膜内凹效果
+      if (currentStage === 3) {
+        // 恢复为原来的圆形样式
+        cellStage.style.border = '2px solid #9ca3af';
+        cellStage.style.borderRadius = '50%';
+        cellStage.style.background = '#eff6ff';
+        
+        // 移除之前添加的SVG容器和内部背景div
+        const existingSVG = cellStage.querySelector('svg');
+        if (existingSVG) {
+          cellStage.removeChild(existingSVG);
+        }
+        
+        const existingBackground = cellStage.querySelector('div');
+        if (existingBackground) {
+          cellStage.removeChild(existingBackground);
+        }
+        
+        // 创建内部背景div，确保染色体显示在正确的层级
+        const innerBackground = document.createElement('div');
+        innerBackground.className = 'absolute inset-0 bg-transparent';
+        innerBackground.style.zIndex = '1'; // 确保在细胞膜之上，染色体之下
+        cellStage.appendChild(innerBackground);
+      } else {
+        // 其他阶段保持原来的圆形细胞膜样式
+        cellStage.style.border = '2px solid #9ca3af';
+        cellStage.style.borderRadius = '50%';
+        cellStage.style.background = '#eff6ff';
+      }
+      
+      // 获取当前阶段数据
+      const stage = meiosisData[currentStage];
+      const baseCount = stage.chromosomeCount;
+      const actualCount = Math.round(baseCount * (currentChromosomeCount / 4));
+      
+      // 根据阶段确定染色体的排列方式
+      if (currentStage === 0) {
+          // 分裂间期 - 显示染色质（按染色体数量生成弯弯曲曲的染色质丝，不超过细胞膜）
+          
+          // 细胞的边界范围
+          const cellWidth = isMobile ? 240 : 300; // 与细胞膜大小匹配
+          const cellHeight = isMobile ? 240 : 300;
+          const margin = 20; // 留出边距，确保染色质不接触细胞膜
+          const innerWidth = cellWidth - margin * 2;
+          const innerHeight = cellHeight - margin * 2;
+          
+          // 根据当前染色体数量确定染色质丝的数量 - 更少且更科学的数量
+          const chromatinCount = Math.round(actualCount * 1.2); // 每条染色体生成1-2条染色质丝，数量更少
+          
+          // 创建SVG容器用于绘制弯弯曲曲的染色质丝
+          const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          svg.className = 'absolute inset-0 w-full h-full';
+          svg.setAttribute('viewBox', '0 0 ' + cellWidth + ' ' + cellHeight); // 添加viewBox确保所有内容正确显示
+          svg.style.pointerEvents = 'none';
+          cellStage.appendChild(svg);
+          
+          // 生成弯弯曲曲的染色质丝
+          for (let i = 0; i < chromatinCount; i++) {
+            // 更均匀的随机起始点分布，确保覆盖整个细胞空间但不接近边缘
+            const radius = Math.random() * Math.min(innerWidth, innerHeight) / 3; // 更靠近中心的起始点
+            const angle = Math.random() * Math.PI * 2;
+            const startX = cellWidth / 2 + Math.cos(angle) * radius;
+            const startY = cellHeight / 2 + Math.sin(angle) * radius;
+            
+            // 优化染色质长度，使其适合细胞大小，避免超出边界
+            const length = Math.random() * 80 + 200; // 200-280px，更适合细胞空间的长度
+            const waves = Math.floor(Math.random() * 3) + 3; // 3-5个波浪，更自然的弯曲
+            
+            // 创建路径数据
+            let pathData = `M ${startX} ${startY}`;
+            
+            // 计算控制点，生成弯弯曲曲的路径
+            let currentX = startX;
+            let currentY = startY;
+            const direction = Math.random() * Math.PI * 2; // 随机方向
+            let currentDirection = direction; // 用于动态调整方向
+            
+            for (let j = 0; j < waves; j++) {
+              // 波浪的高度和宽度 - 更自然的参数
+              const waveHeight = Math.random() * 8 + 6; // 6-14，更适合的波浪高度
+              const waveWidth = length / waves;
+              
+              // 下一个点的位置 - 使用动态方向
+              let endX = currentX + Math.cos(currentDirection) * waveWidth;
+              let endY = currentY + Math.sin(currentDirection) * waveWidth;
+              
+              // 边界处理优化：确保所有点都在边界内
+              const borderDistance = 30; // 距离边界的安全距离
+              if (endX < margin + borderDistance || endX > cellWidth - margin - borderDistance || 
+                  endY < margin + borderDistance || endY > cellHeight - margin - borderDistance) {
+                // 计算边界的反弹方向
+                if (endX < margin + borderDistance || endX > cellWidth - margin - borderDistance) {
+                  currentDirection = Math.PI - currentDirection; // 水平反弹
+                } 
+                if (endY < margin + borderDistance || endY > cellHeight - margin - borderDistance) {
+                  currentDirection = -currentDirection; // 垂直反弹
+                }
+                
+                // 重新计算终点，确保在安全边界内
+                endX = Math.max(margin + borderDistance, Math.min(cellWidth - margin - borderDistance, 
+                               currentX + Math.cos(currentDirection) * waveWidth * 0.7)); // 减少步长以避免过度接近边界
+                endY = Math.max(margin + borderDistance, Math.min(cellHeight - margin - borderDistance, 
+                               currentY + Math.sin(currentDirection) * waveWidth * 0.7));
+              }
+              
+              currentX = endX;
+              currentY = endY;
+              
+              // 动态调整方向，使染色质更加自然地填充空间
+              currentDirection += (Math.random() - 0.5) * 0.5; // 适度的随机微调，使路径更自然
+              
+              // 生成贝塞尔曲线控制点并确保它们也在边界内
+              let cp1x = currentX - Math.cos(currentDirection + Math.PI/2) * waveHeight;
+              let cp1y = currentY - Math.sin(currentDirection + Math.PI/2) * waveHeight;
+              let cp2x = currentX - Math.cos(currentDirection - Math.PI/2) * waveHeight;
+              let cp2y = currentY - Math.sin(currentDirection - Math.PI/2) * waveHeight;
+              
+              // 确保控制点也在边界内
+              cp1x = Math.max(margin, Math.min(cellWidth - margin, cp1x));
+              cp1y = Math.max(margin, Math.min(cellHeight - margin, cp1y));
+              cp2x = Math.max(margin, Math.min(cellWidth - margin, cp2x));
+              cp2y = Math.max(margin, Math.min(cellHeight - margin, cp2y));
+              
+              // 添加贝塞尔曲线段
+              pathData += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${currentX} ${currentY}`;
+            }
+            
+            // 创建路径元素
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', pathData);
+            path.setAttribute('fill', 'none');
+            // 使用红色和蓝色交替显示染色质，更科学的样式
+            const colors = ['#3b82f6', '#ef4444']; // 蓝色和红色
+            const color = colors[i % colors.length];
+            path.setAttribute('stroke', color);
+            path.setAttribute('stroke-width', '2.5'); // 适中的线条宽度，更美观
+            path.setAttribute('opacity', '0.9'); // 稍微增加不透明度以增强可见性
+            svg.appendChild(path);
+          }
+          
+          // 移除了染色质浓集区域（核仁）
+        } else if (currentStage <= 4) {
+        // 减Ⅰ阶段 - 显示染色体对
+        const pairs = Math.round(actualCount / 2);
+        const colors = ['#3b82f6', '#ef4444', '#3b82f6', '#ef4444', '#3b82f6', '#ef4444', '#3b82f6', '#ef4444'];
+        
+        // 减Ⅰ前期、中期和后期特殊处理 - 使用四分体模型
+        if (currentStage === 1 || currentStage === 2 || currentStage === 3) {
+          // 细胞的边界范围
+          const cellWidth = isMobile ? 240 : 300;
+          const cellHeight = isMobile ? 240 : 300;
+          const chromosomeSize = isMobile ? 10 : 12; // 染色体大小，减小以确保不超出边界
+          
+          // 确保显示正确数量的四分体（当选择4条染色体时显示2个）
+          const actualPairs = Math.max(1, Math.floor(actualCount / 2));
+          
+          for (let i = 0; i < actualPairs; i++) {
+            const color1 = colors[i * 2]; // 父方染色体（蓝色）
+            const color2 = colors[i * 2 + 1]; // 母方染色体（红色）
+            
+            // 同源染色体对（联会状态）
+            const pairContainer = document.createElement('div');
+            pairContainer.className = 'absolute';
+            
+            const containerSize = 70; // 容器大小，减小以适应更小的染色体
+            
+            if (currentStage === 1) {
+              // 减Ⅰ前期 - 随机分布，呈现散乱效果
+              
+              // 计算安全边界，确保四分体不会超出细胞膜
+              const margin = containerSize * 0.7; // 增加安全边距，考虑旋转时的最大尺寸
+              const minX = margin;
+              const maxX = cellWidth - margin;
+              const minY = margin;
+              const maxY = cellHeight - margin;
+              
+              // 生成随机位置，但确保不超出安全边界
+              const randomX = minX + Math.random() * (maxX - minX);
+              const randomY = minY + Math.random() * (maxY - minY);
+              
+              pairContainer.style.left = `${randomX}px`;
+              pairContainer.style.top = `${randomY}px`;
+              
+              // 生成随机旋转角度，使四分体方向各异
+              const randomRotation = Math.random() * 360;
+              pairContainer.style.transform = `rotate(${randomRotation}deg)`;
+            } else if (currentStage === 2) {
+              // 减Ⅰ中期 - 横向排列在赤道板上
+              
+              // 赤道板位置 - 上移以解决偏下问题
+              const equatorY = cellHeight / 2 - 15;
+              
+              // 计算所有四分体的总宽度，确保不会超出细胞范围
+              const spacing = 15; // 减小间距
+              const totalWidth = actualPairs * containerSize + (actualPairs - 1) * spacing;
+              // 如果总宽度超过细胞宽度，调整间距
+              const finalSpacing = Math.min(spacing, (cellWidth - actualPairs * containerSize) / Math.max(1, actualPairs - 1));
+              const adjustedTotalWidth = actualPairs * containerSize + (actualPairs - 1) * finalSpacing;
+              const startX = (cellWidth - adjustedTotalWidth) / 2;
+              
+              // 横向排列在赤道板上，考虑调整后的间距
+              pairContainer.style.left = `${startX + i * (containerSize + finalSpacing) + containerSize/2}px`;
+              pairContainer.style.top = `${equatorY}px`;
+              
+              // 中期时四分体方向一致，通常为垂直方向
+              pairContainer.style.transform = `rotate(90deg)`;
+            } else if (currentStage === 3) {
+              // 减Ⅰ后期 - 保持与中期相同的赤道板排列，但同源染色体开始分离
+              const equatorY = cellHeight / 2 - 15;
+              
+              // 保持与中期相同的水平排列
+              const spacing = 15; // 与中期相同的间距
+              const totalWidth = actualPairs * containerSize + (actualPairs - 1) * spacing;
+              // 如果总宽度超过细胞宽度，调整间距
+              const finalSpacing = Math.min(spacing, (cellWidth - actualPairs * containerSize) / Math.max(1, actualPairs - 1));
+              const adjustedTotalWidth = actualPairs * containerSize + (actualPairs - 1) * finalSpacing;
+              const startX = (cellWidth - adjustedTotalWidth) / 2;
+              
+              // 横向排列在赤道板上，位置与中期相同
+              pairContainer.style.left = `${startX + i * (containerSize + finalSpacing) + containerSize/2}px`;
+              pairContainer.style.top = `${equatorY}px`;
+              
+              // 方向保持垂直
+              pairContainer.style.transform = `rotate(90deg)`;
+              
+              // 标记该对染色体需要实现同源染色体分离
+              pairContainer.setAttribute('data-separating', 'true');
+            }
+            
+            // 创建SVG容器用于绘制染色体 - 减小尺寸以匹配容器
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('width', '60'); // 减小宽度以避免超出容器
+            svg.setAttribute('height', '60');
+            svg.setAttribute('viewBox', '0 0 60 60');
+            pairContainer.appendChild(svg);
+            
+            // 为减Ⅰ后期准备纺锤丝数据
+            if (currentStage === 3) {
+
+            }
+            
+            // 绘制两个并排的X形状（四分体）
+            
+            // 左侧同源染色体（蓝色X形状）- 调整坐标以适应60x60的SVG容器
+            // 左上臂
+            const arm1a = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            arm1a.setAttribute('x1', '10');
+            arm1a.setAttribute('y1', '10');
+            arm1a.setAttribute('x2', '20');
+            arm1a.setAttribute('y2', '30');
+            arm1a.setAttribute('stroke', color1);
+            arm1a.setAttribute('stroke-width', chromosomeSize * 0.4); // 稍微加粗以保持可见性
+            arm1a.setAttribute('stroke-linecap', 'round');
+            svg.appendChild(arm1a);
+            
+            // 左下臂
+            const arm1b = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            arm1b.setAttribute('x1', '10');
+            arm1b.setAttribute('y1', '50');
+            arm1b.setAttribute('x2', '20');
+            arm1b.setAttribute('y2', '30');
+            arm1b.setAttribute('stroke', color1);
+            arm1b.setAttribute('stroke-width', chromosomeSize * 0.4);
+            arm1b.setAttribute('stroke-linecap', 'round');
+            svg.appendChild(arm1b);
+            
+            // 右上臂 - 完整X形状
+            const arm1c = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            arm1c.setAttribute('x1', '30');
+            arm1c.setAttribute('y1', '10');
+            arm1c.setAttribute('x2', '20');
+            arm1c.setAttribute('y2', '30');
+            arm1c.setAttribute('stroke', color1);
+            arm1c.setAttribute('stroke-width', chromosomeSize * 0.4);
+            arm1c.setAttribute('stroke-linecap', 'round');
+            svg.appendChild(arm1c);
+            
+            // 右下臂 - 完整X形状
+            const arm1d = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            arm1d.setAttribute('x1', '30');
+            arm1d.setAttribute('y1', '50');
+            arm1d.setAttribute('x2', '20');
+            arm1d.setAttribute('y2', '30');
+            arm1d.setAttribute('stroke', color1);
+            arm1d.setAttribute('stroke-width', chromosomeSize * 0.4);
+            arm1d.setAttribute('stroke-linecap', 'round');
+            svg.appendChild(arm1d);
+            
+            // 右侧同源染色体（红色X形状）- 调整坐标以适应60x60的SVG容器
+            // 左上臂
+            const arm2a = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            arm2a.setAttribute('x1', '35');
+            arm2a.setAttribute('y1', '10');
+            arm2a.setAttribute('x2', '45');
+            arm2a.setAttribute('y2', '30');
+            arm2a.setAttribute('stroke', color2);
+            arm2a.setAttribute('stroke-width', chromosomeSize * 0.4);
+            arm2a.setAttribute('stroke-linecap', 'round');
+            svg.appendChild(arm2a);
+            
+            // 左下臂
+            const arm2b = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            arm2b.setAttribute('x1', '35');
+            arm2b.setAttribute('y1', '50');
+            arm2b.setAttribute('x2', '45');
+            arm2b.setAttribute('y2', '30');
+            arm2b.setAttribute('stroke', color2);
+            arm2b.setAttribute('stroke-width', chromosomeSize * 0.4);
+            arm2b.setAttribute('stroke-linecap', 'round');
+            svg.appendChild(arm2b);
+            
+            // 右上臂 - 完整X形状
+            const arm2c = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            arm2c.setAttribute('x1', '55');
+            arm2c.setAttribute('y1', '10');
+            arm2c.setAttribute('x2', '45');
+            arm2c.setAttribute('y2', '30');
+            arm2c.setAttribute('stroke', color2);
+            arm2c.setAttribute('stroke-width', chromosomeSize * 0.4);
+            arm2c.setAttribute('stroke-linecap', 'round');
+            svg.appendChild(arm2c);
+            
+            // 右下臂 - 完整X形状
+            const arm2d = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            arm2d.setAttribute('x1', '55');
+            arm2d.setAttribute('y1', '50');
+            arm2d.setAttribute('x2', '45');
+            arm2d.setAttribute('y2', '30');
+            arm2d.setAttribute('stroke', color2);
+            arm2d.setAttribute('stroke-width', chromosomeSize * 0.4);
+            arm2d.setAttribute('stroke-linecap', 'round');
+            svg.appendChild(arm2d);
+            
+            // 左侧染色体着丝粒（黑点）- 调整坐标以适应新的X形状
+            const centromere1 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            centromere1.setAttribute('cx', '20');
+            centromere1.setAttribute('cy', '30');
+            centromere1.setAttribute('r', '3');
+            centromere1.setAttribute('fill', '#000000');
+            svg.appendChild(centromere1);
+            
+            // 右侧染色体着丝粒（黑点）- 调整坐标以适应新的X形状
+            const centromere2 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            centromere2.setAttribute('cx', '45');
+            centromere2.setAttribute('cy', '30');
+            centromere2.setAttribute('r', '3');
+            centromere2.setAttribute('fill', '#000000');
+            svg.appendChild(centromere2);
+            
+            // 增强联会效果的连接线（多条）- 调整坐标以适应新的容器
+            const synapsisLines = 3;
+            for (let j = 0; j < synapsisLines; j++) {
+              const yPos = 20 + j * 10;
+              const synapsisLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+              synapsisLine.setAttribute('x1', '20');
+              synapsisLine.setAttribute('y1', yPos);
+              synapsisLine.setAttribute('x2', '45');
+              synapsisLine.setAttribute('y2', yPos);
+              synapsisLine.setAttribute('stroke', '#666666');
+              synapsisLine.setAttribute('stroke-width', '1');
+              synapsisLine.setAttribute('stroke-dasharray', '2');
+              svg.appendChild(synapsisLine);
+            }
+            
+            // 减Ⅰ后期同源染色体分离动画
+            if (currentStage === 3) {
+              setTimeout(() => {
+                // 为四分体中的X染色体添加分离效果
+                const pairRect = pairContainer.getBoundingClientRect();
+                const cellRect = cellStage.getBoundingClientRect();
+                
+                // 获取SVG容器中的所有染色体元素
+                const svgElement = pairContainer.querySelector('svg');
+                if (svgElement) {
+                  // 获取父方（蓝色）和母方（红色）染色体的所有线条
+                  const fatherChromosomeParts = svgElement.querySelectorAll('line[stroke="#3b82f6"]');
+                  const motherChromosomeParts = svgElement.querySelectorAll('line[stroke="#ef4444"]');
+                  
+                  // 获取着丝粒
+                  const centromeres = svgElement.querySelectorAll('circle[fill="#000000"]');
+                  
+                  // 确保SVG容器足够大以显示移动后的染色体
+                  svgElement.setAttribute('width', '140'); // 增加宽度以适应左右移动
+                  svgElement.setAttribute('height', '80'); // 保持高度
+                  svgElement.setAttribute('viewBox', '-30 -20 200 120'); // 扩大视图范围，添加足够的边距
+                  
+                  // 分离动画持续时间（毫秒）
+                  const animationDuration = 1200; // 保持动画时间
+                  const startTime = Date.now();
+                  
+                  // 左右移动同源染色体
+                  const animateSeparation = () => {
+                    const currentTime = Date.now();
+                    const elapsedTime = currentTime - startTime;
+                    const progress = Math.min(elapsedTime / animationDuration, 1);
+                    
+                    // 使用缓动函数使动画更自然
+                    const easeOutProgress = 1 - Math.pow(1 - progress, 2); // 保持缓动函数
+                    
+                    // 父方染色体（蓝色）向左移动
+                    const fatherTranslateX = -30 * easeOutProgress; // 向左移动30px
+                    // 母方染色体（红色）向右移动
+                    const motherTranslateX = 30 * easeOutProgress; // 向右移动30px
+                    
+                    // 应用变换
+                    fatherChromosomeParts.forEach(part => {
+                      part.setAttribute('transform', `translate(${fatherTranslateX}, 0)`);
+                    });
+                    
+                    motherChromosomeParts.forEach(part => {
+                      part.setAttribute('transform', `translate(${motherTranslateX}, 0)`);
+                    });
+                    
+                    // 也移动着丝粒
+                    if (centromeres.length >= 2) {
+                      centromeres[0].setAttribute('transform', `translate(${fatherTranslateX}, 0)`); // 父方着丝粒
+                      centromeres[1].setAttribute('transform', `translate(${motherTranslateX}, 0)`); // 母方着丝粒
+                    }
+                    
+                    // 继续动画直到完成
+                    if (progress < 1) {
+                      requestAnimationFrame(animateSeparation);
+                    } else {
+                      // 动画完成后移除联会线
+                      const synapsisLines = svgElement.querySelectorAll('line[stroke="#666666"]');
+                      synapsisLines.forEach(line => line.remove());
+                    }
+                  };
+                  
+                  // 启动分离动画
+                  animateSeparation();
+                }
+              }, 300); // 延迟启动分离动画
+            }
+            
+
+            
+            cellStage.appendChild(pairContainer);
+          }
+        } else {
+            if (currentStage === 4) {
+                // 减Ⅰ末期 - 完全参考减Ⅰ前中后期的染色体形状、大小和格式
+                // 染色体数目为分裂前细胞中染色体总数的一半
+                // 直接使用currentChromosomeCount而不是actualCount来确保显示正确数量
+                const displayCount = Math.max(1, Math.floor(currentChromosomeCount / 2));
+                const isBlue = Math.random() > 0.5; // 50%概率选择蓝色，50%选择红色
+                const selectedColor = isBlue ? colors[0] : colors[1]; // 使用与前面阶段相同的蓝色或红色
+                const chromosomeSize = 12; // 与前面阶段相同的染色体大小
+                
+                // 显示染色体 - 完全参考减Ⅰ前中后期的SVG X形状实现
+                for (let i = 0; i < displayCount; i++) {
+                    // 染色体容器
+                    const chromContainer = document.createElement('div');
+                    chromContainer.className = 'absolute';
+                    
+                    // 随机分布位置，但确保在可视区域内
+                    const randomLeft = Math.floor(Math.random() * 150) + 50; // 50-200px范围内随机
+                    const randomTop = Math.floor(Math.random() * 120) + 70; // 70-190px范围内随机
+                    chromContainer.style.left = `${randomLeft}px`;
+                    chromContainer.style.top = `${randomTop}px`;
+                    chromContainer.style.zIndex = '10'; // 确保在最上层显示
+                    
+                    // 生成随机旋转角度，使染色体方向各异
+                    const randomRotation = Math.random() * 360;
+                    chromContainer.style.transform = `rotate(${randomRotation}deg)`;
+                    
+                    // 创建SVG容器用于绘制染色体 - 与前面阶段相同的尺寸
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('width', '60');
+                    svg.setAttribute('height', '60');
+                    svg.setAttribute('viewBox', '0 0 60 60');
+                    chromContainer.appendChild(svg);
+                    
+                    // 绘制X形状的染色体，与前面阶段保持一致
+                    // 左上臂
+                    const arm1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    arm1.setAttribute('x1', '10');
+                    arm1.setAttribute('y1', '10');
+                    arm1.setAttribute('x2', '20');
+                    arm1.setAttribute('y2', '30');
+                    arm1.setAttribute('stroke', selectedColor);
+                    arm1.setAttribute('stroke-width', chromosomeSize * 0.4);
+                    arm1.setAttribute('stroke-linecap', 'round');
+                    svg.appendChild(arm1);
+                    
+                    // 右上臂
+                    const arm2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    arm2.setAttribute('x1', '30');
+                    arm2.setAttribute('y1', '10');
+                    arm2.setAttribute('x2', '20');
+                    arm2.setAttribute('y2', '30');
+                    arm2.setAttribute('stroke', selectedColor);
+                    arm2.setAttribute('stroke-width', chromosomeSize * 0.4);
+                    arm2.setAttribute('stroke-linecap', 'round');
+                    svg.appendChild(arm2);
+                    
+                    // 左下臂
+                    const arm3 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    arm3.setAttribute('x1', '10');
+                    arm3.setAttribute('y1', '50');
+                    arm3.setAttribute('x2', '20');
+                    arm3.setAttribute('y2', '30');
+                    arm3.setAttribute('stroke', selectedColor);
+                    arm3.setAttribute('stroke-width', chromosomeSize * 0.4);
+                    arm3.setAttribute('stroke-linecap', 'round');
+                    svg.appendChild(arm3);
+                    
+                    // 右下臂
+                    const arm4 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    arm4.setAttribute('x1', '30');
+                    arm4.setAttribute('y1', '50');
+                    arm4.setAttribute('x2', '20');
+                    arm4.setAttribute('y2', '30');
+                    arm4.setAttribute('stroke', selectedColor);
+                    arm4.setAttribute('stroke-width', chromosomeSize * 0.4);
+                    arm4.setAttribute('stroke-linecap', 'round');
+                    svg.appendChild(arm4);
+                    
+                    // 着丝粒（染色体的连接点）
+                    const centromere = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    centromere.setAttribute('cx', '20');
+                    centromere.setAttribute('cy', '30');
+                    centromere.setAttribute('r', chromosomeSize * 0.3);
+                    centromere.setAttribute('fill', 'black');
+                    svg.appendChild(centromere);
+                    
+                    cellStage.appendChild(chromContainer);
+                }
+            } else {
+                // 减Ⅰ其他阶段 - 正常显示染色体对
+                for (let i = 0; i < pairs; i++) {
+                  const color1 = colors[i * 2]; // 父方染色体（蓝色）
+                  const color2 = colors[i * 2 + 1]; // 母方染色体（红色）
+                   
+                  // 同源染色体1
+                  const chrom1 = document.createElement('div');
+                  chrom1.className = 'absolute';
+                   
+                  // 减Ⅰ中期特殊排列（赤道板排列）
+                  if (currentStage === 2) {
+                    chrom1.style.left = '110px';
+                    chrom1.style.top = `${80 + i * 40}px`;
+                  } 
+                  // 减Ⅰ后期特殊排列（向两极移动）
+                  else if (currentStage === 3) {
+                    chrom1.style.left = i % 2 === 0 ? '40px' : '180px';
+                    chrom1.style.top = `${80 + Math.floor(i / 2) * 40}px`;
+                  } else {
+                    chrom1.style.left = `${100 + i * 30}px`;
+                    chrom1.style.top = '120px';
+                  }
+                   
+                  // 染色体1的长臂
+                  const arm1_1 = document.createElement('div');
+                  arm1_1.className = 'w-3 h-24 rounded-full';
+                  arm1_1.style.backgroundColor = color1;
+                  arm1_1.style.marginLeft = '4px';
+                   
+                  // 染色体1的着丝点
+                  const centromere1_1 = document.createElement('div');
+                  centromere1_1.className = 'w-12 h-4 bg-black rounded-md mt-8';
+                  centromere1_1.style.marginLeft = '0';
+                   
+                  chrom1.appendChild(arm1_1);
+                  chrom1.appendChild(centromere1_1);
+                  cellStage.appendChild(chrom1);
+                   
+                  // 同源染色体2
+                  const chrom2 = document.createElement('div');
+                  chrom2.className = 'absolute';
+                   
+                  // 减Ⅰ中期特殊排列
+                  if (currentStage === 2) {
+                    chrom2.style.left = '140px';
+                    chrom2.style.top = `${80 + i * 40}px`;
+                  } 
+                  // 减Ⅰ后期特殊排列
+                  else if (currentStage === 3) {
+                    chrom2.style.left = i % 2 === 0 ? '40px' : '180px';
+                    chrom2.style.top = `${120 + Math.floor(i / 2) * 40}px`;
+                  } else {
+                    chrom2.style.left = `${130 + i * 30}px`;
+                    chrom2.style.top = '120px';
+                  }
+                   
+                  // 染色体2的长臂
+                  const arm2_1 = document.createElement('div');
+                  arm2_1.className = 'w-3 h-24 rounded-full';
+                  arm2_1.style.backgroundColor = color2;
+                  arm2_1.style.marginLeft = '4px';
+                   
+                  // 染色体2的着丝点
+                  const centromere2_1 = document.createElement('div');
+                  centromere2_1.className = 'w-12 h-4 bg-black rounded-md mt-8';
+                  centromere2_1.style.marginLeft = '0';
+                   
+                  chrom2.appendChild(arm2_1);
+                  chrom2.appendChild(centromere2_1);
+                  cellStage.appendChild(chrom2);
+              }
+            }
+        }
+      } else {
+        // 减Ⅱ阶段 - 显示染色体
+        // 定义全局变量以在不同阶段之间共享染色体颜色
+        let selectedColor;
+        const colors = ['#3b82f6', '#ef4444', '#3b82f6', '#ef4444'];
+        
+        if (currentStage === 5) {
+          // 减Ⅱ前期 - 与减Ⅰ末期完全相同的染色体形状、大小和格式
+          const displayCount = Math.max(1, Math.floor(currentChromosomeCount / 2));
+          // 只有在首次进入减Ⅱ阶段时才随机选择颜色
+          if (!window.prevStageColor || window.prevStage !== 4) {
+            const isBlue = Math.random() > 0.5; // 50%概率选择蓝色，50%选择红色
+            selectedColor = isBlue ? colors[0] : colors[1];
+            window.prevStageColor = selectedColor; // 保存颜色供下一阶段使用
+          } else {
+            selectedColor = window.prevStageColor; // 使用上一阶段的颜色
+          }
+          window.prevStage = 5; // 保存当前阶段
+          const chromosomeSize = 12; // 与减Ⅰ末期相同的染色体大小
+          
+          // 显示染色体 - 完全使用与减Ⅰ末期相同的SVG X形状实现
+          for (let i = 0; i < displayCount; i++) {
+              
+              // 染色体容器
+              const chromContainer = document.createElement('div');
+              chromContainer.className = 'absolute';
+              
+              // 随机分布位置，但确保在可视区域内
+              const randomLeft = Math.floor(Math.random() * 150) + 50; // 50-200px范围内随机
+              const randomTop = Math.floor(Math.random() * 120) + 70; // 70-190px范围内随机
+              chromContainer.style.left = `${randomLeft}px`;
+              chromContainer.style.top = `${randomTop}px`;
+              chromContainer.style.zIndex = '10'; // 确保在最上层显示
+              
+              // 生成随机旋转角度，使染色体方向各异
+              const randomRotation = Math.random() * 360;
+              chromContainer.style.transform = `rotate(${randomRotation}deg)`;
+              
+              // 创建SVG容器用于绘制染色体 - 与减Ⅰ末期相同的尺寸
+              const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+              svg.setAttribute('width', '60');
+              svg.setAttribute('height', '60');
+              svg.setAttribute('viewBox', '0 0 60 60');
+              chromContainer.appendChild(svg);
+              
+              // 绘制X形状的染色体，与减Ⅰ末期保持一致
+              // 左上臂
+              const arm1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+              arm1.setAttribute('x1', '10');
+              arm1.setAttribute('y1', '10');
+              arm1.setAttribute('x2', '20');
+              arm1.setAttribute('y2', '30');
+              arm1.setAttribute('stroke', selectedColor);
+              arm1.setAttribute('stroke-width', chromosomeSize * 0.4);
+              arm1.setAttribute('stroke-linecap', 'round');
+              svg.appendChild(arm1);
+              
+              // 右上臂
+              const arm2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+              arm2.setAttribute('x1', '30');
+              arm2.setAttribute('y1', '10');
+              arm2.setAttribute('x2', '20');
+              arm2.setAttribute('y2', '30');
+              arm2.setAttribute('stroke', selectedColor);
+              arm2.setAttribute('stroke-width', chromosomeSize * 0.4);
+              arm2.setAttribute('stroke-linecap', 'round');
+              svg.appendChild(arm2);
+              
+              // 左下臂
+              const arm3 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+              arm3.setAttribute('x1', '10');
+              arm3.setAttribute('y1', '50');
+              arm3.setAttribute('x2', '20');
+              arm3.setAttribute('y2', '30');
+              arm3.setAttribute('stroke', selectedColor);
+              arm3.setAttribute('stroke-width', chromosomeSize * 0.4);
+              arm3.setAttribute('stroke-linecap', 'round');
+              svg.appendChild(arm3);
+              
+              // 右下臂
+              const arm4 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+              arm4.setAttribute('x1', '30');
+              arm4.setAttribute('y1', '50');
+              arm4.setAttribute('x2', '20');
+              arm4.setAttribute('y2', '30');
+              arm4.setAttribute('stroke', selectedColor);
+              arm4.setAttribute('stroke-width', chromosomeSize * 0.4);
+              arm4.setAttribute('stroke-linecap', 'round');
+              svg.appendChild(arm4);
+              
+              // 着丝粒（染色体的连接点）
+              const centromere = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+              centromere.setAttribute('cx', '20');
+              centromere.setAttribute('cy', '30');
+              centromere.setAttribute('r', chromosomeSize * 0.3);
+              centromere.setAttribute('fill', 'black');
+              svg.appendChild(centromere);
+              
+              cellStage.appendChild(chromContainer);
+          }
+        } else {
+          // 减Ⅱ其他阶段
+          if (currentStage === 6) {
+            // 减Ⅱ中期 - 修复染色体形状，参考减Ⅰ中期排列方式
+            const displayCount = Math.max(1, Math.floor(currentChromosomeCount / 2));
+            const chromosomeSize = 12;
+            const cellWidth = 300; // 细胞宽度
+            const cellHeight = 300; // 细胞高度
+            const containerSize = 70; // 容器大小
+            
+            // 从减Ⅱ前期获取染色体颜色，保持颜色一致性
+            selectedColor = window.prevStageColor || colors[0];
+            window.prevStage = 6; // 保存当前阶段
+            
+            // 赤道板位置 - 参考减Ⅰ中期
+            const equatorY = cellHeight / 2 - 15;
+            
+            // 计算所有染色体的总宽度，确保不会超出细胞范围
+            const spacing = 15; // 参考减Ⅰ中期的间距
+            const totalWidth = displayCount * containerSize + (displayCount - 1) * spacing;
+            // 如果总宽度超过细胞宽度，调整间距
+            const finalSpacing = Math.min(spacing, (cellWidth - displayCount * containerSize) / Math.max(1, displayCount - 1));
+            const adjustedTotalWidth = displayCount * containerSize + (displayCount - 1) * finalSpacing;
+            const startX = (cellWidth - adjustedTotalWidth) / 2;
+            
+            for (let i = 0; i < displayCount; i++) {
+              const chromContainer = document.createElement('div');
+              chromContainer.className = 'absolute';
+              
+              // 横向整齐排列在赤道板上，参考减Ⅰ中期的排列方式
+              chromContainer.style.left = `${startX + i * (containerSize + finalSpacing) + containerSize/2}px`;
+              chromContainer.style.top = `${equatorY}px`;
+              
+              // 方向保持横向
+              chromContainer.style.transform = `rotate(0deg)`;
+              
+              // 创建SVG容器，尺寸参考减Ⅰ
+              const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+              svg.setAttribute('width', '60');
+              svg.setAttribute('height', '60');
+              
+              // 绘制正常的X形状染色体（修复弯曲问题）
+              // 左上臂
+              const arm1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+              arm1.setAttribute('x1', '10');
+              arm1.setAttribute('y1', '10');
+              arm1.setAttribute('x2', '20');
+              arm1.setAttribute('y2', '30');
+              arm1.setAttribute('stroke', selectedColor);
+              arm1.setAttribute('stroke-width', chromosomeSize * 0.4);
+              arm1.setAttribute('stroke-linecap', 'round');
+              svg.appendChild(arm1);
+              
+              // 右上臂
+              const arm2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+              arm2.setAttribute('x1', '30');
+              arm2.setAttribute('y1', '10');
+              arm2.setAttribute('x2', '20');
+              arm2.setAttribute('y2', '30');
+              arm2.setAttribute('stroke', selectedColor);
+              arm2.setAttribute('stroke-width', chromosomeSize * 0.4);
+              arm2.setAttribute('stroke-linecap', 'round');
+              svg.appendChild(arm2);
+              
+              // 左下臂
+              const arm3 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+              arm3.setAttribute('x1', '10');
+              arm3.setAttribute('y1', '50');
+              arm3.setAttribute('x2', '20');
+              arm3.setAttribute('y2', '30');
+              arm3.setAttribute('stroke', selectedColor);
+              arm3.setAttribute('stroke-width', chromosomeSize * 0.4);
+              arm3.setAttribute('stroke-linecap', 'round');
+              svg.appendChild(arm3);
+              
+              // 右下臂
+              const arm4 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+              arm4.setAttribute('x1', '30');
+              arm4.setAttribute('y1', '50');
+              arm4.setAttribute('x2', '20');
+              arm4.setAttribute('y2', '30');
+              arm4.setAttribute('stroke', selectedColor);
+              arm4.setAttribute('stroke-width', chromosomeSize * 0.4);
+              arm4.setAttribute('stroke-linecap', 'round');
+              svg.appendChild(arm4);
+              
+              // 着丝粒（染色体的连接点）
+              const centromere = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+              centromere.setAttribute('cx', '20');
+              centromere.setAttribute('cy', '30');
+              centromere.setAttribute('r', chromosomeSize * 0.3);
+              centromere.setAttribute('fill', 'black');
+              svg.appendChild(centromere);
+              
+              chromContainer.appendChild(svg);
+              cellStage.appendChild(chromContainer);
+            }
+          } else {
+            // 减Ⅱ其他阶段
+            if (currentStage === 7) {
+              // 减Ⅱ后期 - 与减Ⅱ中期保持一致的染色体样式
+              const displayCount = Math.max(1, Math.floor(currentChromosomeCount / 2));
+              const chromosomeSize = 12; // 与减Ⅱ中期相同大小
+              const containerSize = 70; // 与减Ⅱ中期相同容器大小
+              
+              // 使用颜色数组，实现两对红色和两对蓝色
+              const colors = ['#3b82f6', '#ef4444', '#3b82f6', '#ef4444'];
+              window.prevStage = 7; // 保存当前阶段
+              
+              for (let i = 0; i < displayCount; i++) {
+                // 计算染色体垂直位置
+                const verticalPos = 100 + Math.floor(i / 2) * 30;
+                
+                // X型染色体分裂成两个L型姐妹染色单体
+                // 第一个姐妹染色单体 (左上和左下臂)
+                const chromatid1 = document.createElement('div');
+                chromatid1.className = 'absolute';
+                
+                // 第二个姐妹染色单体 (右上和右下臂)
+                const chromatid2 = document.createElement('div');
+                chromatid2.className = 'absolute';
+                
+                // 减Ⅱ后期特殊排列 - 向两极移动的动态效果
+                if (i % 2 === 0) {
+                  // 左侧染色体对，向左侧移动
+                  chromatid1.style.left = '40px';
+                  chromatid1.style.top = `${verticalPos - 5}px`;
+                  chromatid2.style.left = '60px';
+                  chromatid2.style.top = `${verticalPos + 5}px`;
+                } else {
+                  // 右侧染色体对，向右侧移动
+                  chromatid1.style.left = '160px';
+                  chromatid1.style.top = `${verticalPos - 5}px`;
+                  chromatid2.style.left = '180px';
+                  chromatid2.style.top = `${verticalPos + 5}px`;
+                }
+                
+                // 为姐妹染色单体添加动态分离的CSS动画
+                chromatid1.style.transition = 'transform 1s ease-out';
+                chromatid2.style.transition = 'transform 1s ease-out';
+                
+                // 第一个姐妹染色单体 - 左上和左下臂 (L型)
+                const svg1 = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg1.setAttribute('width', '40');
+                svg1.setAttribute('height', '60');
+                
+                // 左上臂
+                const arm1_1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                arm1_1.setAttribute('x1', '10');
+                arm1_1.setAttribute('y1', '10');
+                arm1_1.setAttribute('x2', '20');
+                arm1_1.setAttribute('y2', '30');
+                arm1_1.setAttribute('stroke', colors[i]);
+                arm1_1.setAttribute('stroke-width', chromosomeSize * 0.4);
+                arm1_1.setAttribute('stroke-linecap', 'round');
+                svg1.appendChild(arm1_1);
+                
+                // 左下臂
+                const arm1_2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                arm1_2.setAttribute('x1', '10');
+                arm1_2.setAttribute('y1', '50');
+                arm1_2.setAttribute('x2', '20');
+                arm1_2.setAttribute('y2', '30');
+                arm1_2.setAttribute('stroke', colors[i]);
+                arm1_2.setAttribute('stroke-width', chromosomeSize * 0.4);
+                arm1_2.setAttribute('stroke-linecap', 'round');
+                svg1.appendChild(arm1_2);
+                
+                // 着丝点部分 (分裂后的一半)
+                const centromere1 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                centromere1.setAttribute('cx', '20');
+                centromere1.setAttribute('cy', '30');
+                centromere1.setAttribute('r', chromosomeSize * 0.25);
+                centromere1.setAttribute('fill', 'black');
+                svg1.appendChild(centromere1);
+                
+                // 第二个姐妹染色单体 - 右上和右下臂 (L型)
+                const svg2 = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg2.setAttribute('width', '40');
+                svg2.setAttribute('height', '60');
+                
+                // 右上臂
+                const arm2_1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                arm2_1.setAttribute('x1', '30');
+                arm2_1.setAttribute('y1', '10');
+                arm2_1.setAttribute('x2', '20');
+                arm2_1.setAttribute('y2', '30');
+                arm2_1.setAttribute('stroke', colors[i]);
+                arm2_1.setAttribute('stroke-width', chromosomeSize * 0.4);
+                arm2_1.setAttribute('stroke-linecap', 'round');
+                svg2.appendChild(arm2_1);
+                
+                // 右下臂
+                const arm2_2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                arm2_2.setAttribute('x1', '30');
+                arm2_2.setAttribute('y1', '50');
+                arm2_2.setAttribute('x2', '20');
+                arm2_2.setAttribute('y2', '30');
+                arm2_2.setAttribute('stroke', colors[i]);
+                arm2_2.setAttribute('stroke-width', chromosomeSize * 0.4);
+                arm2_2.setAttribute('stroke-linecap', 'round');
+                svg2.appendChild(arm2_2);
+                
+                // 着丝点部分 (分裂后的另一半)
+                const centromere2 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                centromere2.setAttribute('cx', '20');
+                centromere2.setAttribute('cy', '30');
+                centromere2.setAttribute('r', chromosomeSize * 0.25);
+                centromere2.setAttribute('fill', 'black');
+                svg2.appendChild(centromere2);
+                
+                chromatid1.appendChild(svg1);
+                chromatid2.appendChild(svg2);
+                cellStage.appendChild(chromatid1);
+                cellStage.appendChild(chromatid2);
+                
+                // 使用setTimeout触发动画，创建延迟的动态效果
+                setTimeout(() => {
+                  if (i % 2 === 0) {
+                    // 左侧染色体对：一个很上面，一个很下面，分布在左上角和左下角
+                    chromatid1.style.transform = 'translateY(-80px)'; // 很上面
+                    chromatid2.style.transform = 'translateY(80px)';  // 很下面
+                  } else {
+                    // 右侧染色体对：一个很下面，一个很上面，分布在右下角和右上角
+                    chromatid1.style.transform = 'translateY(80px)';  // 很下面
+                    chromatid2.style.transform = 'translateY(-80px)'; // 很上面
+                  }
+                }, 100);
+              }
+            } else if (currentStage === 8) {
+              // 减Ⅱ末期 - 显示四个细胞，根据初始染色体数量动态调整每个细胞中的染色体数量
+              // 使用颜色数组，实现两对红色和两对蓝色
+              const colors = ['#3b82f6', '#ef4444', '#3b82f6', '#ef4444'];
+              const chromosomeSize = 12;
+              
+              // 移除现有的细胞膜
+              cellStage.style.border = 'none';
+              
+              // 定义四个细胞的位置信息
+              const cells = [
+                { left: '40px', top: '40px' },    // 左上细胞
+                { left: '140px', top: '40px' },   // 右上细胞
+                { left: '40px', top: '140px' },   // 左下细胞
+                { left: '140px', top: '140px' }   // 右下细胞
+              ];
+              
+              // 获取当前阶段数据
+              const stage = meiosisData[currentStage];
+              // 计算每个子细胞中的染色体数量（根据初始染色体数量动态调整）
+              // 当初始细胞染色体为4条时，每个子细胞为2条；6条时为3条；8条时为4条
+              // 直接计算：每个子细胞染色体数 = 初始染色体数 / 4 * 2（因为减数分裂后染色体数减半）
+              const chromosomesPerCell = Math.round(currentChromosomeCount / 2);
+              
+              // 为每个细胞创建相应数量的L型染色体
+              for (let cellIndex = 0; cellIndex < 4; cellIndex++) {
+                const cell = cells[cellIndex];
+                
+                // 创建子细胞容器
+                const daughterCell = document.createElement('div');
+                daughterCell.className = 'absolute w-[120px] h-[120px] border-2 border-gray-400 rounded-full bg-blue-50/80';
+                daughterCell.style.left = cell.left;
+                daughterCell.style.top = cell.top;
+                daughterCell.style.overflow = 'hidden';
+                
+                // 为每个细胞创建相应数量的L型染色体
+                for (let chromIndex = 0; chromIndex < chromosomesPerCell; chromIndex++) {
+                  // 根据细胞索引使用对应的颜色
+                  const color = colors[cellIndex];
+                  
+                  // 创建染色体容器
+                  const chromContainer = document.createElement('div');
+                  chromContainer.className = 'absolute';
+                  
+                  // 根据染色体数量动态调整染色体尺寸
+                  let adjustedChromosomeSize = chromosomeSize;
+                  if (chromosomesPerCell >= 3) {
+                    adjustedChromosomeSize = chromosomeSize * 0.8; // 当染色体数量较多时，缩小染色体尺寸
+                  }
+                  
+                  // 调整SVG尺寸以适应更多染色体
+                  const svgSize = chromosomesPerCell >= 3 ? 30 : 40;
+                  
+                  // 计算染色体在细胞内的位置
+                  // 使用更简单直接的计算方法，确保所有染色体都能显示
+                  const totalWidth = chromosomesPerCell * svgSize;
+                  const startPos = Math.max(0, (120 - totalWidth) / 2); // 居中显示
+                  
+                  chromContainer.style.left = `${startPos + chromIndex * svgSize}px`;
+                  chromContainer.style.top = `${(120 - svgSize) / 2}px`; // 垂直居中
+                  
+                  // 创建SVG容器
+                  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                  svg.setAttribute('width', svgSize);
+                  svg.setAttribute('height', svgSize);
+                  
+                  // 创建L型染色体 - 左上臂和左下臂（形成L形）
+                  // 左上臂
+                  const arm1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                  // 调整坐标以适应不同的SVG尺寸
+                  const centerX = svgSize / 2;
+                  const centerY = svgSize / 2;
+                  const offset = svgSize * 0.25;
+                  
+                  arm1.setAttribute('x1', centerX);
+                  arm1.setAttribute('y1', centerY - offset);
+                  arm1.setAttribute('x2', centerX - offset);
+                  arm1.setAttribute('y2', centerY);
+                  arm1.setAttribute('stroke', color);
+                  arm1.setAttribute('stroke-width', adjustedChromosomeSize * 0.4);
+                  arm1.setAttribute('stroke-linecap', 'round');
+                  svg.appendChild(arm1);
+                  
+                  // 左下臂
+                  const arm2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                  arm2.setAttribute('x1', centerX);
+                  arm2.setAttribute('y1', centerY + offset);
+                  arm2.setAttribute('x2', centerX - offset);
+                  arm2.setAttribute('y2', centerY);
+                  arm2.setAttribute('stroke', color);
+                  arm2.setAttribute('stroke-width', adjustedChromosomeSize * 0.4);
+                  arm2.setAttribute('stroke-linecap', 'round');
+                  svg.appendChild(arm2);
+                  
+                  // 着丝点部分
+                  const centromere = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                  centromere.setAttribute('cx', centerX - offset / 2);
+                  centromere.setAttribute('cy', centerY);
+                  centromere.setAttribute('r', adjustedChromosomeSize * 0.25);
+                  centromere.setAttribute('fill', 'black');
+                  svg.appendChild(centromere);
+                  
+                  chromContainer.appendChild(svg);
+                  daughterCell.appendChild(chromContainer);
+                }
+                
+                cellStage.appendChild(daughterCell);
+              }
+            }
+          }
+        }
+        
+        // 减Ⅱ末期的子细胞已在上面的代码中创建
+      }
+    }
+
+    // 更新界面显示
+    function updateDisplay() {
+      const stage = meiosisData[currentStage];
+      const baseChromosomeCount = stage.chromosomeCount;
+      const baseDnaCount = stage.dnaCount;
+      const baseChromatidCount = stage.chromatidCount;
+      
+      // 根据当前染色体数量计算实际数量
+      const actualChromosomeCount = Math.round(baseChromosomeCount * (currentChromosomeCount / 4));
+      const actualDnaCount = Math.round(baseDnaCount * (currentChromosomeCount / 4));
+      const actualChromatidCount = Math.round(baseChromatidCount * (currentChromosomeCount / 4));
+      
+      // 更新阶段信息
+      stageTitle.textContent = stage.title;
+      stageDescription.textContent = stage.description;
+      
+      // 更新数据显示
+        chromosomeCountValue.textContent = actualChromosomeCount;
+        dnaCountValue.textContent = actualDnaCount;
+        chromatidCountValue.textContent = actualChromatidCount;
+        
+        // 如果有同源染色体对数显示元素，则更新它
+        if (document.getElementById('homologous-pair-count-value')) {
+          const actualHomologousPairCount = Math.round(stage.homologousPairCount * (currentChromosomeCount / 4));
+          document.getElementById('homologous-pair-count-value').textContent = actualHomologousPairCount;
+        }
+      
+      // 更新阶段按钮状态
+      stageBtns.forEach((btn, index) => {
+        if (index === currentStage) {
+          btn.classList.remove('bg-gray-200', 'text-gray-700');
+          btn.classList.add('bg-primary', 'text-white');
+        } else {
+          btn.classList.remove('bg-primary', 'text-white');
+          btn.classList.add('bg-gray-200', 'text-gray-700');
+        }
+      });
+      
+      // 更新染色体可视化
+      generateChromosomeVisualization();
+      
+      // 更新图表阶段线
+      updateChartStageLine();
+      
+      // 更新前后按钮状态
+      prevStageBtn.disabled = currentStage === 0;
+      nextStageBtn.disabled = currentStage === meiosisData.length - 1;
+      
+      if (prevStageBtn.disabled) {
+        prevStageBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        prevStageBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+      
+      if (nextStageBtn.disabled) {
+        nextStageBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        nextStageBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    }
+
+    // 切换到上一个阶段
+    function goToPrevStage() {
+      if (currentStage > 0) {
+        currentStage--;
+        updateDisplay();
+      }
+    }
+
+    // 切换到下一个阶段
+    function goToNextStage() {
+      if (currentStage < meiosisData.length - 1) {
+        currentStage++;
+        updateDisplay();
+      }
+    }
+
+    // 直接跳转到指定阶段
+    function goToStage(stageIndex) {
+      currentStage = stageIndex;
+      updateDisplay();
+    }
+
+    // 更改染色体数量
+    function changeChromosomeCount(count) {
+      currentChromosomeCount = parseInt(count);
+      
+      // 重新初始化图表
+      if (meiosisChart) {
+        meiosisChart.destroy();
+      }
+      initChart();
+      
+      // 更新各时期数量表格
+      generateStageDataTable();
+      
+      // 更新显示
+      updateDisplay();
+    }
+
+    // 重置模型
+    function resetModel() {
+      currentStage = 0;
+      currentChromosomeCount = 4;
+      chromosomeCountSelect.value = '4';
+      
+      // 重新初始化图表
+      if (meiosisChart) {
+        meiosisChart.destroy();
+      }
+      initChart();
+      
+      // 更新显示
+      updateDisplay();
+    }
+
+    // 显示关于模态框
+    function showAboutModal() {
+      modalTitle.textContent = "关于减数分裂模型";
+      modalContent.innerHTML = `
+        <div class="prose">
+          <h4 class="text-lg font-semibold mb-2">减数分裂数学和物理模型</h4>
+          <p>本模型旨在帮助高中生物学学习者直观理解减数分裂过程中染色体、DNA和姐妹染色单体的数量变化规律。</p>
+          
+          <h4 class="text-lg font-semibold mt-4 mb-2">模型特点</h4>
+          <ul>
+            <li>可视化展示减数分裂九个关键时期的特点</li>
+            <li>动态图表展示染色体、DNA和姐妹染色单体数量变化</li>
+            <li>支持4-8条染色体的模拟</li>
+            <li>交互式界面，可自由切换不同分裂阶段</li>
+          </ul>
+          
+          <h4 class="text-lg font-semibold mt-4 mb-2">使用说明</h4>
+          <ul>
+            <li>使用阶段按钮或左右箭头在不同分裂阶段间切换</li>
+            <li>通过下拉菜单选择不同的染色体数量</li>
+            <li>观察左侧细胞图示和右侧数据图表的变化</li>
+            <li>点击"重置模型"可恢复初始状态</li>
+          </ul>
+          
+          <p class="mt-4 text-sm text-gray-600">© 2025 减数分裂教学模型 - 为高中生物学教学设计</p>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    }
+
+    // 关闭模态框
+    function closeModal() {
+      modal.classList.add('hidden');
+    }
+
+    // 事件监听
+    prevStageBtn.addEventListener('click', goToPrevStage);
+    nextStageBtn.addEventListener('click', goToNextStage);
+    chromosomeCountSelect.addEventListener('change', (e) => changeChromosomeCount(e.target.value));
+    
+    stageBtns.forEach((btn, index) => {
+      btn.addEventListener('click', () => goToStage(index));
+    });
+    
+    resetModelBtn.addEventListener('click', resetModel);
+    aboutBtn.addEventListener('click', showAboutModal);
+    closeModalBtn.addEventListener('click', closeModal);
+    
+    // 点击模态框背景关闭
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+
+    // 初始化应用
+    function initApp() {
+      initChart();
+      updateDisplay();
+      // 初始化各时期数量表格
+      generateStageDataTable();
+      // 初始化各时期小型物理模型
+      generateStageThumbnails();
+      // 初始化缩略图开关功能
+      initThumbnailToggle();
+    }
+
+    // 页面加载完成后初始化
+    window.addEventListener('DOMContentLoaded', initApp);
+    
+  </script>
+</body>
+</html>
